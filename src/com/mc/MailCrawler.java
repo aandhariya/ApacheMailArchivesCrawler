@@ -161,40 +161,34 @@ public class MailCrawler implements Runnable{
 	 */
 	private void addMailLinks() throws IOException
 	{
-		try
-		{
-			int page = 0;
-			String url = null;
-			Connection connection = null;
-			Elements mailLinksOnPage = null;
+		
+		int page = 0;
+		String url = null;
+		Connection connection = null;
+		Elements mailLinksOnPage = null;
 
-			mails = new LinkedList<String>();
-			while(true)
+		mails = new LinkedList<String>();
+		while(true)
+		{
+			url = String.format("http://mail-archives.apache.org/mod_mbox/%s/%4d%02d.mbox/date?%d", mailingList, year, month, page);
+			connection = Jsoup.connect(url).userAgent(MailCrawlerConstant.USER_AGENT);
+			htmlDocument = connection.timeout(0).get();
+
+			mailLinksOnPage =  htmlDocument.select("td[class=subject] a");
+
+			if(mailLinksOnPage.isEmpty())
+				break;
+
+
+			for(Element mail : mailLinksOnPage)
 			{
-				url = String.format("http://mail-archives.apache.org/mod_mbox/%s/%4d%02d.mbox/date?%d", mailingList, year, month, page);
-				connection = Jsoup.connect(url).userAgent(MailCrawlerConstant.USER_AGENT);
-				htmlDocument = connection.timeout(0).get();
-
-				mailLinksOnPage =  htmlDocument.select("td[class=subject] a");
-
-				if(mailLinksOnPage.isEmpty())
-					break;
-
-
-				for(Element mail : mailLinksOnPage)
-				{
-					mails.add(mail.absUrl("href"));
-				}
-				page++;
-
+				mails.add(mail.absUrl("href"));
 			}
-			System.out.println("addMailLinks :: Total " + mails.size() + " mails found for " + MailCrawlerConstant.monthMap.get(month) + ", " + year);
+			page++;
+
 		}
-		catch(IOException io)
-		{
-			System.err.println("addMailLinks :: Error in out HTTP request for " + MailCrawlerConstant.monthMap.get(month) + ", " + year + "\n" + io);
-			throw io;
-		}
+		System.out.println("addMailLinks :: Total " + mails.size() + " mails found for " + MailCrawlerConstant.monthMap.get(month) + ", " + year);
+	
 	}
 
 	/**
@@ -304,7 +298,7 @@ public class MailCrawler implements Runnable{
 			downloadMails();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			System.out.println("Please enter correct mailing list and year");
+			System.out.println("No Mails exist for "+ MailCrawlerConstant.monthMap.get(month) + ", " + year + " for mailing List " + mailingList);
 		}
 		
 	}
